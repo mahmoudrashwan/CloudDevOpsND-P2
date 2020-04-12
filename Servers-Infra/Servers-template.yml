@@ -221,7 +221,7 @@ Resources:
                   TargetGroupArn: !Ref WSTargetGroup
             LoadBalancerArn: !Ref WSLB
             Port: '80'
-            Protocol: http
+            Protocol: HTTP
     WSLBListenerRule:
         Type: AWS::ElasticLoadBalancingV2::ListenerRule
         Properties:
