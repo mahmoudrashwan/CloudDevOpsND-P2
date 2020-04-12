@@ -139,7 +139,7 @@ Resources:
             ImageId: !Ref JumpImageId
             InstanceType: !Ref JumpInstanceType
             BlockDeviceMappings:
-                - DeviceName: "/dev/sda1"
+                - DeviceName: "/dev/sdk"
                   Ebs:
                     VolumeSize: "10"
     JumpAutoScalingGroup:
@@ -161,19 +161,20 @@ Resources:
                 UserData:
                     Fn::Base64: !Sub |
                         #!/bin/bash
-                        sudo apt-get update -y
-                        sudo apt-get install unzip awscli -y
-                        sudo apt-get install apache2 -y
-                        sudo systemctl start apache2.service
-                        cd /var/www/html
-                        sudo aws s3 cp  s3://udacity-p2-udagram/Udagram.zip .
-                        sudo unzip -o Udagram.zip
+                        sudo su
+                        apt-get update -y
+                        apt-get install unzip awscli -y
+                        apt-get install apache2 -y
+                        systemctl start apache2.service
+                        aws s3 cp  s3://udacity-p2-udagram/Udagram.zip /tmp/Udagram.zip
+                        rm -rf /var/www/html/*
+                        unzip /tmp/Udagram.zip -d /var/www/html
                 KeyName: !Ref InternalKey
                 IamInstanceProfile: !Ref WSInstanceProfile
                 ImageId: !Ref ServersImageId
                 InstanceType: !Ref ServersInstanceType
                 BlockDeviceMappings:
-                    - DeviceName: "/dev/sda1"
+                    - DeviceName: "/dev/sdk"
                       Ebs:
                         VolumeSize: "10"
     WSTargetGroup:
