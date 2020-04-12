@@ -20,7 +20,7 @@ Parameters:
     ServersImageId:
         Description: Servers ImageId | Default is Ubuntu 18.04
         Type: String
-        Default: ami-0e16da8fb7e1decc0
+        Default: ami-005bdb005fb00e791
     JumpInstanceType:
         Description: JumpBox Instance Type
         Type: String
@@ -28,7 +28,7 @@ Parameters:
     JumpImageId:
         Description: JumpBox ImageId | Default is Ubuntu 18.04
         Type: String
-        Default: ami-0e16da8fb7e1decc0
+        Default: ami-005bdb005fb00e791
 
 Resources:
     UdagramS3ReadOnlyEC2:
