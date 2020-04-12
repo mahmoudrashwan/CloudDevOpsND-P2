@@ -201,7 +201,7 @@ Resources:
             LaunchConfigurationName: !Ref WSLaunchConfiguration
             MinSize: "4"
             MaxSize: "4"
-            TargetGroupArns:
+            TargetGroupARNs:
                 - !Ref WSTargetGroup
     WSLB:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
