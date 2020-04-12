@@ -64,7 +64,6 @@ Resources:
         Type: AWS::EC2::SecurityGroup
         Properties:
             GroupDescription: LoadBalancer SG for allow inbound to only port 80 and allow all outbount.
-            GroupName: LBSG1
             VpcId:
                 Fn::ImportValue:
                     !Sub "${EnvName}-VPC"
@@ -150,8 +149,8 @@ Resources:
                 Fn::ImportValue:
                     !Sub "${EnvName}-PublicSubnets"
             LaunchConfigurationName: !Ref JumpLaunchConfiguration
-            Min: "1"
-            Max: "1"
+            MinSize: "1"
+            MaxSize: "1"
     WSLaunchConfiguration:
             Type: AWS::AutoScaling::LaunchConfiguration
             Properties:
@@ -175,6 +174,20 @@ Resources:
                     - DeviceName: "/dev/sda1"
                       Ebs:
                         VolumeSize: "10"
+    WSTargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            HealthCheckIntervalSeconds: 35
+            HealthCheckTimeoutSeconds: 8
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthyThresholdCount: 2
+            UnhealthyThresholdCount: 4
+            Protocol: HTTP
+            Port: 80
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvName}-VPC"
     WSAutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
@@ -182,15 +195,18 @@ Resources:
                 Fn::ImportValue:
                     !Sub "${EnvName}-PrivateSubnets"
             LaunchConfigurationName: !Ref WSLaunchConfiguration
-            Min: "4"
-            Max: "4"
-            TargetGroupArns: !Ref WSTargetGroup
+            MinSize: "4"
+            MaxSize: "4"
+            TargetGroupArns:
+                - !Ref WSTargetGroup
     WSLB:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
             Subnets:
                 - Fn::ImportValue:
-                    !Sub "${EnvName}-PublicSubnets"
+                    !Sub "${EnvName}-PublicSubnet1"
+                - Fn::ImportValue:
+                    !Sub "${EnvName}-PublicSubnet2"
             SecurityGroups:
                 - !Ref LBSG
     WSLBListener:
@@ -213,20 +229,7 @@ Resources:
                   Values: [/]
             ListenerArn: !Ref WSLBListener
             Priority: 1
-    WSTargetGroup:
-        Type: AWS::ElasticLoadBalancingV2::TargetGroup
-        Properties:
-            HealthCheckIntervalSeconds: 35
-            HealthCheckTimeoutSeconds: 8
-            HealthCheckPath: /
-            HealthCheckProtocol: HTTP
-            HealthyThresholdCount: 2
-            UnhealthyThresholdCount: 4
-            Protocol: HTTP
-            Port: 80
-            VpcId:
-                Fn::ImportValue:
-                    !Sub "${EnvName}-VPC"
+
 
 Outputs:
     LBAppPublicURL:
