@@ -146,8 +146,10 @@ Resources:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
             VPCZoneIdentifier:
-                Fn::ImportValue:
-                    !Sub "${EnvName}-PublicSubnets"
+                - Fn::ImportValue:
+                    !Sub "${EnvName}-PublicSubnet1"
+                - Fn::ImportValue:
+                    !Sub "${EnvName}-PublicSubnet2"
             LaunchConfigurationName: !Ref JumpLaunchConfiguration
             MinSize: "1"
             MaxSize: "1"
@@ -192,8 +194,10 @@ Resources:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
             VPCZoneIdentifier:
-                Fn::ImportValue:
-                    !Sub "${EnvName}-PrivateSubnets"
+                - Fn::ImportValue:
+                    !Sub "${EnvName}-PrivateSubnet1"
+                - Fn::ImportValue:
+                    !Sub "${EnvName}-PrivateSubnet2"
             LaunchConfigurationName: !Ref WSLaunchConfiguration
             MinSize: "4"
             MaxSize: "4"
