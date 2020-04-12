@@ -17,7 +17,7 @@
     },
     {
         "ParameterKey": "ServersImageId",
-        "ParameterValue": "ami-06635ea75f7f79f0d"
+        "ParameterValue": "ami-0e16da8fb7e1decc0"
     },
     {
         "ParameterKey": "JumpInstanceType",
@@ -25,7 +25,7 @@
     },
     {
         "ParameterKey": "JumpImageId",
-        "ParameterValue": "ami-06635ea75f7f79f0d"
+        "ParameterValue": "ami-0e16da8fb7e1decc0"
     }
 ]
 

@@ -20,7 +20,7 @@ Parameters:
     ServersImageId:
         Description: Servers ImageId | Default is Ubuntu 18.04
         Type: String
-        Default: ami-06635ea75f7f79f0d
+        Default: ami-0e16da8fb7e1decc0
     JumpInstanceType:
         Description: JumpBox Instance Type
         Type: String
@@ -28,7 +28,7 @@ Parameters:
     JumpImageId:
         Description: JumpBox ImageId | Default is Ubuntu 18.04
         Type: String
-        Default: ami-06635ea75f7f79f0d
+        Default: ami-0e16da8fb7e1decc0
 
 Resources:
     UdagramS3ReadOnlyEC2:
@@ -161,13 +161,13 @@ Resources:
                 UserData:
                     Fn::Base64: !Sub |
                         #!/bin/bash
-                        apt-get update -y
-                        apt-get install unzip awscli -y
-                        apt-get install apache2 -y
-                        systemctl start apache2.service
+                        sudo apt-get update -y
+                        sudo apt-get install unzip awscli -y
+                        sudo apt-get install apache2 -y
+                        sudo systemctl start apache2.service
                         cd /var/www/html
-                        aws s3 cp  s3://udacity-p2-udagram/Udagram.zip .
-                        unzip -o Udagram.zip
+                        sudo aws s3 cp  s3://udacity-p2-udagram/Udagram.zip .
+                        sudo unzip -o Udagram.zip
                 KeyName: !Ref InternalKey
                 IamInstanceProfile: !Ref WSInstanceProfile
                 ImageId: !Ref ServersImageId
