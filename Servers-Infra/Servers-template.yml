@@ -2,3 +2,236 @@ Description: >
     CloudDevOps NanoDegree Project 2 - Udagram - HA WebApp Cloudformation,
     This is the Servers template to create Servers Infra Stack.
     Created by: Mahmoud Rashwan | Email: m.rashwan32@gmail.com | April, 2020.
+
+Parameters:
+    EnvName:
+        Description: Environment Name used by and whithin Stacks.
+        Type: String
+    JumpKey:
+        Description: SSH Key for Access JumpBox
+        Type: String
+    InternalKey:
+        Description: SSH Key for Access Internal Instance
+        Type: String
+    ServersInstanceType:
+        Description: Servers Instance Type | Using Default for testing only
+        Type: String
+        Default: t2.micro
+    ServersImageId:
+        Description: Servers ImageId | Default is Ubuntu 18.04
+        Type: String
+        Default: ami-06635ea75f7f79f0d
+    JumpInstanceType:
+        Description: JumpBox Instance Type
+        Type: String
+        Default: t2.micro
+    JumpImageId:
+        Description: JumpBox ImageId | Default is Ubuntu 18.04
+        Type: String
+        Default: ami-06635ea75f7f79f0d
+
+Resources:
+    UdagramS3ReadOnlyEC2:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: UdagramS3ReadOnlyEC2
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: "Allow"
+                      Principal:
+                        Service:
+                            - "ec2.amazonaws.com"
+                      Action:
+                        - "sts:AssumeRole"
+            Policies:
+                - PolicyName: "S3ReadOnlyAccess"
+                  PolicyDocument: 
+                    Version: "2012-10-17"
+                    Statement:
+                        - Effect: "Allow"
+                          Action:
+                            - "s3:GetObject"
+                          Resource: "arn:aws:s3:::udacity-p2-udagram/*"
+    WSInstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+            Roles:
+                - !Ref UdagramS3ReadOnlyEC2
+        DependsOn: UdagramS3ReadOnlyEC2
+
+    LBSG:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: LoadBalancer SG for allow inbound to only port 80 and allow all outbount.
+            GroupName: LBSG1
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvName}-VPC"
+            SecurityGroupEgress:
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  CidrIp: 0.0.0.0/0
+                  FromPort: 80
+                  ToPort: 80
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvName
+    JumpSG1:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: SG for JumpBox
+            GroupName: JumpSG
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvName}-VPC"
+            SecurityGroupEgress:
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  CidrIp: 0.0.0.0/0
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvName
+    WebServerSG:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: SG for WebServer on Privaye Instances
+            GroupName: WebServerSG
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvName}-VPC"
+            SecurityGroupEgress:
+                - IpProtocol: tcp
+                  FromPort: 0
+                  ToPort: 65535
+                  CidrIp: 0.0.0.0/0
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  SourceSecurityGroupId: !Ref LBSG
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  SourceSecurityGroupId: !Ref JumpSG1
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvName
+    JumpLaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties:
+            SecurityGroups:
+                - !Ref JumpSG1
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash
+                    sudo apt-get update -y
+            KeyName: !Ref JumpKey
+            ImageId: !Ref JumpImageId
+            InstanceType: !Ref JumpInstanceType
+            BlockDeviceMappings:
+                - DeviceName: "/dev/sda1"
+                  Ebs:
+                    VolumeSize: "10"
+    JumpAutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            VPCZoneIdentifier:
+                Fn::ImportValue:
+                    !Sub "${EnvName}-PublicSubnets"
+            LaunchConfigurationName: !Ref JumpLaunchConfiguration
+            Min: "1"
+            Max: "1"
+    WSLaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Properties:
+                SecurityGroups:
+                    - !Ref WebServerSG
+                UserData:
+                    Fn::Base64: !Sub |
+                        #!/bin/bash
+                        apt-get update -y
+                        apt-get install unzip awscli -y
+                        apt-get install apache2 -y
+                        systemctl start apache2.service
+                        cd /var/www/html
+                        aws s3 cp  s3://udacity-p2-udagram/Udagram.zip .
+                        unzip -o Udagram.zip
+                KeyName: !Ref InternalKey
+                IamInstanceProfile: !Ref WSInstanceProfile
+                ImageId: !Ref ServersImageId
+                InstanceType: !Ref ServersInstanceType
+                BlockDeviceMappings:
+                    - DeviceName: "/dev/sda1"
+                      Ebs:
+                        VolumeSize: "10"
+    WSAutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            VPCZoneIdentifier:
+                Fn::ImportValue:
+                    !Sub "${EnvName}-PrivateSubnets"
+            LaunchConfigurationName: !Ref WSLaunchConfiguration
+            Min: "4"
+            Max: "4"
+            TargetGroupArns: !Ref WSTargetGroup
+    WSLB:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Subnets:
+                - Fn::ImportValue:
+                    !Sub "${EnvName}-PublicSubnets"
+            SecurityGroups:
+                - !Ref LBSG
+    WSLBListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref WSTargetGroup
+            LoadBalancerArn: !Ref WSLB
+            Port: '80'
+            Protocol: http
+    WSLBListenerRule:
+        Type: AWS::ElasticLoadBalancingV2::ListenerRule
+        Properties:
+            Actions:
+                - Type: forward
+                  TargetGroupArn: !Ref WSTargetGroup
+            Conditions:
+                - Field: path-pattern
+                  Values: [/]
+            ListenerArn: !Ref WSLBListener
+            Priority: 1
+    WSTargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            HealthCheckIntervalSeconds: 35
+            HealthCheckTimeoutSeconds: 8
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthyThresholdCount: 2
+            UnhealthyThresholdCount: 4
+            Protocol: HTTP
+            Port: 80
+            VpcId:
+                Fn::ImportValue:
+                    !Sub "${EnvName}-VPC"
+
+Outputs:
+    LBAppPublicURL:
+        Description: Full Public Url to access WebApp via Loadbalancer 
+        Value: !Join ["://", [http, !GetAtt WSLB.DNSName]]
+        Export:
+            Name: !Sub ${EnvName}-LB-PublicURL
+

@@ -4,11 +4,28 @@
         "ParameterValue": "P2-Udagram"
     },
     {
-        "ParameterKey": "P2-JumpKey",
-        "ParameterValue": ""
+        "ParameterKey": "JumpKey",
+        "ParameterValue": "JumpPub"
     },
     {
-        "ParameterKey": "P2-PrivateKey",
-        "ParameterValue": ""
+        "ParameterKey": "InternalKey",
+        "ParameterValue": "IntUdagram"
+    },
+    {
+        "ParameterKey": "ServersInstanceType",
+        "ParameterValue": "t2.medium"
+    },
+    {
+        "ParameterKey": "ServersImageId",
+        "ParameterValue": "ami-06635ea75f7f79f0d"
+    },
+    {
+        "ParameterKey": "JumpInstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "JumpImageId",
+        "ParameterValue": "ami-06635ea75f7f79f0d"
     }
 ]
+
