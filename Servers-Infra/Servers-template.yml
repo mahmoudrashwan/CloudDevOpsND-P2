@@ -162,7 +162,6 @@ Resources:
                     Fn::Base64: !Sub |
                         #!/bin/bash
                         sudo su
-                        apt-get update -y
                         apt-get install unzip awscli -y
                         apt-get install apache2 -y
                         systemctl start apache2.service
@@ -234,7 +233,6 @@ Resources:
                   Values: [/]
             ListenerArn: !Ref WSLBListener
             Priority: 1
-
 
 Outputs:
     LBAppPublicURL:
